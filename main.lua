@@ -3,34 +3,27 @@ function GameFunctions.moveToPos(rig, destination)
 	local humanoid = rig.Humanoid
 	local rootPart = rig.HumanoidRootPart
 	
+	rootPart:SetNetworkOwner(nil)
 	local path = PathfindingService:CreatePath({
-		AgentRadius = 2,
+		AgentRadius = 4,
 		AgentCanJump = true,
 	})
-	
+
 	local success, errorMessage = pcall(function()
 		path:ComputeAsync(rootPart.Position, destination)
 	end)
-	
+
 	path.Blocked:Connect(function()
 		return
 	end)
-	
+
 	if not success or path.Status ~= Enum.PathStatus.Success then return end
-	
+
 	local waypoints = path:GetWaypoints()
-	
-	local wayPointToMoveTo = 2
-	humanoid.MoveToFinished:Connect(function(reached)
-		if not reached or wayPointToMoveTo >= #waypoints then return end
-	
-		if waypoints[wayPointToMoveTo].Action == Enum.PathWaypointAction.Jump then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
-		
-		humanoid:MoveTo(waypoints[wayPointToMoveTo].Position)
-		wayPointToMoveTo += 1
-	end)
-	
-	humanoid:MoveTo(waypoints[wayPointToMoveTo].Position)
-	
-	repeat task.wait() until wayPointToMoveTo >= #waypoints
+
+	for waypoint = 2, #waypoints - 1 do
+		if waypoints[waypoint].Action == Enum.PathWaypointAction.Jump then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
+		humanoid:MoveTo(waypoints[waypoint].Position)
+		humanoid.MoveToFinished:Wait()
+	end
 end
